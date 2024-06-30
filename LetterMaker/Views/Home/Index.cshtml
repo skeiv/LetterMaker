@@ -1,0 +1,412 @@
+﻿<!-- Контейнер для элементов управления -->
+<div id="controls-container mb-3">
+    <!-- Инпуты для изменения размеров канваса -->
+    <div class="row">
+        <div class="col">
+            <div class="form-group">
+                <label for="canvasWidth">Ширина канваса:</label>
+                <input type="number" class="form-control" id="canvasWidth" value="800">
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col">
+            <div class="form-group">
+                <label for="canvasHeight">Высота канваса:</label>
+                <input type="number" class="form-control" id="canvasHeight" value="600">
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col">
+            <div class="form-group">
+                <button class="btn btn-primary mt-2" id="changeCanvasSize">Изменить размер</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col">
+            <div class="form-group mb-3">
+                <label class="form-label" for="backgroundImage">Выберите фон:</label>
+                <input type="file" class="form-control" id="backgroundImage" accept="image/*">
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col">
+            <div class="form-group mb-3">
+                <button class="btn btn-primary" id="addText">Добавить текст</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col">
+            <div class="form-group mb-3">
+                <button class="btn btn-primary" id="addImage">Добавить изображение</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col">
+            <div class="form-group mb-3">
+                <button class="btn btn-success" id="download">Скачать</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Меню редактирования текста -->
+    <div id="text-edit-menu">
+        <label class="form-label" for="textEdit">Текст:</label>
+        <textarea class="form-control" name="textArea" cols="40" rows="5" id="textEdit"></textarea>
+        <label class="form-label" for="fontSelect">Шрифт:</label>
+        <select class="form-control" id="fontSelect">
+            <option value="Aristocrat">Аристократ</option>
+            <option value="Villager">Деревенщина</option>
+        </select>
+        <label class="form-label" for="fontSize">Размер:</label>
+        <input class="form-control" type="number" id="fontSize" value="24">
+        <label class="form-label" for="fontColor">Цвет:</label>
+        <input class="form-control" type="color" id="fontColor" value="#000000">
+    </div>
+</div>
+
+<div style="width:10px">
+
+</div>
+
+<!-- Контейнер для канваса -->
+<div id="canvas-container">
+    <canvas id="canvas"></canvas>
+</div>
+
+<!-- Подключаем Bootstrap и jQuery JS -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script>
+    $(document).ready(function () {
+        var canvas = document.getElementById('canvas');
+        var canvasContainer = document.getElementById('canvas-container');
+        var ctx = canvas.getContext('2d');
+        var elements = [];
+        var backgroundImage;
+        var selectedElement = null;
+        var editableElement = null;
+        var isDragging = false;
+        // Обработчик изменения размера изображения через растягивание
+        var isResizing = false;
+        var corner = null;
+
+        var clickTimer;
+        var isClick = true;
+        var dragStartX, dragStartY;
+
+        setCanvasSize(800, 600);
+
+        function setCanvasSize(width, height) {
+            canvas.width = width;
+            canvas.height = height;
+            canvasContainer.style.width = `${width}px`;
+            canvasContainer.style.height = `${height}px`;
+            drawElements();
+        }
+
+        function drawElements() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (backgroundImage) {
+                ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+            } else {
+                ctx.fillStyle = '#f0f0f0';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+            elements.forEach(function (element) {
+                if (element.type === 'text') {
+                    var lines = element.text.split('<br>'); 
+                    var lineHeight = element.size * 1.5; 
+
+                    ctx.font = element.size + 'px ' + element.font;
+                    ctx.fillStyle = element.color;
+
+                    var textWidth = 0;
+                    var textX = element.x;
+                    var textY = element.y - element.size;
+
+                    lines.forEach(function (line, index) {
+                        var lineWidth = ctx.measureText(line).width;
+                        if (lineWidth > textWidth) {
+                            textWidth = lineWidth; // Обновляем ширину прямоугольника
+                        }
+                    });
+
+                    lines.forEach(function (line, index) {
+                        var textY = element.y + index * lineHeight;
+                        ctx.fillText(line, textX, textY);
+                    });
+
+                    if (element === selectedElement) {
+                        ctx.strokeStyle = '#000';
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(textX, element.y - element.size, textWidth, lines.length * lineHeight);
+                    }
+                } else if (element.type === 'image') {
+                    ctx.drawImage(element.image, element.x, element.y, element.width, element.height);
+                    if (element === selectedElement) {
+                        ctx.strokeStyle = '#000';
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(element.x, element.y, element.width, element.height);
+                    }
+                }
+            });
+        }
+
+        $('#backgroundImage').change(function () {
+            var file = this.files[0];
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                backgroundImage = new Image();
+                backgroundImage.onload = function () {
+                    drawElements();
+                };
+                backgroundImage.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        $('#addText').click(function () {
+            var text = 'Пример текста';
+            var color = '#000000';
+            var size = 24;
+            var font = 'Aristocrat';
+            var x = 50;
+            var y = 50;
+            var newTextElement = { type: 'text', text, color, size, font, x, y };
+            elements.push(newTextElement);
+            drawElements();
+        });
+
+        $('#addImage').click(function () {
+            var fileInput = $('<input type="file" accept="image/*">');
+            fileInput.on('change', function () {
+                var file = this.files[0];
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    var image = new Image();
+                    image.onload = function () {
+                        var x = 100;
+                        var y = 100;
+                        var width = image.width;
+                        var height = image.height;
+                        elements.push({ type: 'image', image, x, y, width, height });
+                        drawElements();
+                    };
+                    image.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+            fileInput.click();
+        });
+
+        $('#download').click(function () {
+            var link = document.createElement('a');
+            link.download = 'canvas_image.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        });
+
+        $('#changeCanvasSize').click(function () {
+            var newWidth = parseInt($('#canvasWidth').val());
+            var newHeight = parseInt($('#canvasHeight').val());
+            setCanvasSize(newWidth, newHeight);
+        });
+
+        canvas.addEventListener('mousedown', function (e) {
+            var mouseX = e.offsetX;
+            var mouseY = e.offsetY;
+            clearTimeout(clickTimer);
+            isClick = true;
+
+            clickTimer = setTimeout(function () {
+                isClick = false;
+                if (selectedElement && selectedElement.type === 'text') {
+                    dragStartX = mouseX;
+                    dragStartY = mouseY;
+                    isDragging = true;
+                }
+            }, 200);
+
+            for (var i = elements.length - 1; i >= 0; i--) {
+                var element = elements[i];
+                if (element.type === 'text') {
+                    var textWidth = ctx.measureText(element.text).width;
+                    if (mouseX >= element.x && mouseX <= element.x + textWidth &&
+                        mouseY >= element.y - element.size && mouseY <= element.y) {
+                        selectedElement = element;
+                        break;
+                    }
+                } else if (element.type === 'image') {
+                    if (mouseX >= element.x && mouseX <= element.x + element.width &&
+                        mouseY >= element.y && mouseY <= element.y + element.height) {
+                        isDragging = true;
+                        if (isCursorNearEdge(mouseX, mouseY, element)) {
+                            isResizing = true;
+                            corner = getCorner(mouseX, mouseY, element);
+                        }
+                        dragStartX = mouseX - element.x;
+                        dragStartY = mouseY - element.y;
+                        selectedElement = element;
+                        break;
+                    }
+                }
+            }
+
+            drawElements();
+        });
+
+        canvas.addEventListener('mouseup', function () {
+            clearTimeout(clickTimer);
+            isDragging = false;
+            isResizing = false;
+            corner = null;
+
+            if (isClick && selectedElement && selectedElement.type === 'text') {
+                if ($('#text-edit-menu').is(':visible')) {
+                    hideTextEditMenu();
+                } else {
+                    editableElement = selectedElement;
+                    showTextEditMenu();
+                }
+            } else {
+                hideTextEditMenu();
+            }
+        });
+
+        canvas.addEventListener('mousemove', function (e) {
+            if (isDragging && selectedElement) {
+                var mouseX = e.offsetX;
+                var mouseY = e.offsetY;
+
+                if (selectedElement.type === 'text') {
+                    selectedElement.x += mouseX - dragStartX;
+                    selectedElement.y += mouseY - dragStartY;
+                    dragStartX = mouseX;
+                    dragStartY = mouseY;
+                } else if (selectedElement.type === 'image') {
+                    if (isResizing && corner) {
+                        resizeElement(selectedElement, mouseX, mouseY, corner);
+                    } else {
+                        selectedElement.x = mouseX - dragStartX;
+                        selectedElement.y = mouseY - dragStartY;
+                    }
+                }
+
+                drawElements();
+            }
+        });
+ 
+
+        canvas.addEventListener('mouseout', function () {
+            isDragging = false;
+            isResizing = false;
+            selectedElement = null;
+        });
+
+        function showTextEditMenu() {
+            $('#text-edit-menu').show();
+            $('#textEdit').val(editableElement.text.replace(/<br>/g, '\n'));
+            $('#fontSelect').val(editableElement.font);
+            $('#fontSize').val(editableElement.size);
+            $('#fontColor').val(editableElement.color);
+
+            $('#fontSelect, #fontSize, #fontColor, #textEdit').on('input', function () {
+                editableElement.font = $('#fontSelect').val();
+                editableElement.size = parseInt($('#fontSize').val());
+                editableElement.color = $('#fontColor').val();
+                editableElement.text = $('#textEdit').val().replace(/\n/g, '<br>');
+                drawElements();
+            });
+        }
+
+        function hideTextEditMenu() {
+            $('#text-edit-menu').hide();
+            editableElement = null;
+        }
+
+        function resizeElement(element, mouseX, mouseY, corner) {
+            var minSize = 10; // Минимальный размер элемента
+            var newWidth, newHeight;
+
+            switch (corner) {
+                case 'nw':
+                    newWidth = element.x + element.width - mouseX;
+                    newHeight = element.y + element.height - mouseY;
+                    if (newWidth >= minSize && newHeight >= minSize) {
+                        element.width = newWidth;
+                        element.height = newHeight;
+                        element.x = mouseX;
+                        element.y = mouseY;
+                    }
+                    break;
+                case 'ne':
+                    newWidth = mouseX - element.x;
+                    newHeight = element.y + element.height - mouseY;
+                    if (newWidth >= minSize && newHeight >= minSize) {
+                        element.width = newWidth;
+                        element.height = newHeight;
+                        element.y = mouseY;
+                    }
+                    break;
+                case 'sw':
+                    newWidth = element.x + element.width - mouseX;
+                    newHeight = mouseY - element.y;
+                    if (newWidth >= minSize && newHeight >= minSize) {
+                        element.width = newWidth;
+                        element.height = newHeight;
+                        element.x = mouseX;
+                    }
+                    break;
+                case 'se':
+                    newWidth = mouseX - element.x;
+                    newHeight = mouseY - element.y;
+                    if (newWidth >= minSize && newHeight >= minSize) {
+                        element.width = newWidth;
+                        element.height = newHeight;
+                    }
+                    break;
+            }
+        }
+
+        function isCursorNearEdge(x, y, element) {
+            var tolerance = 10; // Порог для определения близости к границе
+            return (Math.abs(x - element.x) < tolerance && Math.abs(y - element.y) < tolerance) ||
+                (Math.abs(x - (element.x + element.width)) < tolerance && Math.abs(y - element.y) < tolerance) ||
+                (Math.abs(x - element.x) < tolerance && Math.abs(y - (element.y + element.height)) < tolerance) ||
+                (Math.abs(x - (element.x + element.width)) < tolerance && Math.abs(y - (element.y + element.height)) < tolerance);
+        }
+
+        function getCorner(x, y, element) {
+            var tolerance = 10; // Порог для определения угла
+            if (Math.abs(x - element.x) < tolerance && Math.abs(y - element.y) < tolerance) {
+                return 'nw'; // Верхний левый угол
+            } else if (Math.abs(x - (element.x + element.width)) < tolerance && Math.abs(y - element.y) < tolerance) {
+                return 'ne'; // Верхний правый угол
+            } else if (Math.abs(x - element.x) < tolerance && Math.abs(y - (element.y + element.height)) < tolerance) {
+                return 'sw'; // Нижний левый угол
+            } else if (Math.abs(x - (element.x + element.width)) < tolerance && Math.abs(y - (element.y + element.height)) < tolerance) {
+                return 'se'; // Нижний правый угол
+            }
+            return null;
+        }
+
+        // Обработчик для предотвращения выделения текста при перетаскивании
+        canvas.addEventListener('mousedown', function (e) {
+            e.preventDefault();
+        });
+    });
+
+</script>

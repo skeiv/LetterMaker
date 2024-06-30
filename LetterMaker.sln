@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34525.116
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LetterMaker", "LetterMaker\LetterMaker.csproj", "{5C8FAEF1-4885-4FF1-827A-5F2FB75A80AB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5C8FAEF1-4885-4FF1-827A-5F2FB75A80AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5C8FAEF1-4885-4FF1-827A-5F2FB75A80AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5C8FAEF1-4885-4FF1-827A-5F2FB75A80AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5C8FAEF1-4885-4FF1-827A-5F2FB75A80AB}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A08A1490-9A69-48DF-B3C2-5DA5FF75CCEC}
+	EndGlobalSection
+EndGlobal

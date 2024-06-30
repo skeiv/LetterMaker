@@ -1,0 +1,73 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LetterMaker</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/LetterMaker.styles.css" asp-append-version="true" />
+
+    <style>
+        /* Основной контейнер */
+        .container {
+            display: flex;
+            justify-content: flex-start;
+            align-items: flex-start;
+            max-width: 1980px;
+            margin: 20px auto;
+        }
+
+        /* Стили для контейнера с элементами управления */
+        #controls-container {
+            width: 300px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            margin-right: 20px; /* Отступ справа от контейнера с канвасом */
+        }
+
+        /* Стили для контейнера с канвасом */
+        #canvas-container {
+            width: 800px;
+            height: 600px;
+            position: relative;
+            border: 1px solid #ccc;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            background-color: #f0f0f0;
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* Стили для элементов управления текстом и изображениями */
+        .text-controls, .image-controls {
+            margin-bottom: 10px;
+            display: none; /* По умолчанию скрыты */
+        }
+
+        .draggable:hover .text-controls,
+        .draggable:hover .image-controls {
+            display: block; /* Показываем при наведении */
+        }
+
+        #text-edit-menu {
+            display: none;
+            background: white;
+            border: 1px solid #ccc;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+            @RenderBody()
+    </div>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
